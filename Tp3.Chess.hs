@@ -1,4 +1,4 @@
-module Tp3.Chess (ChessGame(..), PieceColor(..), PieceType(..)) where
+module Tp3.Chess (ChessGame(..), PieceColor(..), PieceType(..), baseConfiguration) where
 
 import qualified Data.Map as Map
 import Tp3.Ai
@@ -9,20 +9,35 @@ class (Show p)=>Piece p where
     value::p->Integer
     movement::p->(Int,Int)->Board->[(Int,Int)]
     
-data PieceColor = White | Black deriving(Eq,Show)
+data PieceColor = White | Black deriving(Eq)
 
 enemyColor White = Black
 enemyColor Black = White
 
-data PieceType = King | Queen | Rook | Bishop | Knight | Pawn deriving(Show)
+data PieceType = King | Queen | Rook | Bishop | Knight | Pawn
 
 data ChessPiece = ChessPiece {
-    pieceType :: PieceType ,
+    pieceType :: PieceType,
     pieceColor :: PieceColor
-} deriving(Show)
+    
+}
 
 data ChessGame = ChessGame PieceColor Board
 
+instance Show PieceType where
+    show King = "K"
+    show Queen = "Q"
+    show Rook = "R"
+    show Bishop = "B"
+    show Knight = "N"
+    show Pawn = "P"
+
+instance Show PieceColor where 
+    show White = "W"
+    show Black = "B"
+
+instance Show ChessPiece where
+    show (ChessPiece t c) = show c ++ show t
 instance Piece ChessPiece where
     value (ChessPiece t _)= pieceValue t
     movement = movementImpl
@@ -37,6 +52,16 @@ instance Ai ChessGame where
     goal p = Nothing
     actions a = []
     
+baseConfiguration = whitePieces ++ blackPieces
+    where
+    whitePieces = 
+        ([((0,0), (ChessPiece Rook White)), ((7,0), (ChessPiece Rook White)), 
+        ((1,0), (ChessPiece Knight White)), ((6,0), (ChessPiece Knight White)),
+        ((2,0), (ChessPiece Bishop White)), ((5,0), (ChessPiece Bishop White)),
+        ((3,0), (ChessPiece Queen White)), ((5,0), (ChessPiece King White))]) 
+        ++ 
+            map (\i -> ((i,1), (ChessPiece Pawn White))) [0..7]
+    blackPieces = (map (\((x,y),(ChessPiece t _))->((x,7-y),(ChessPiece t Black)))) whitePieces
     
 transitionImpl (ChessGame color board) = 
     concatMap transitions $ filter (\(k,x)->pieceColor x == color) $ Map.toList  board
