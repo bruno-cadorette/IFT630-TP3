@@ -1,9 +1,12 @@
 module Tp3.Ai (Ai) where
 
 class (Show a, Ord a)=>Ai a where
-    transition :: a->[(Action,a)]
+    transition :: a->[a]
+    actions :: a->[(Action,a)]
     goal :: a->(Maybe Integer)
     heuristic :: a->Integer
+
+type Action = String
 
 --import Tp3.Ai
 --import Data.Maybe
@@ -31,16 +34,16 @@ class (Show a, Ord a)=>Ai a where
 --	)]
 --       )
 
+--Depth Racine
+minmax::(Ai a)=>Integer -> a -> Action
+minmax depth racine = fst $ bestAction (actions racine)
+                      where --bestAction :: (Ai a)=>[(Action,a)] -> (Action,a)
+                            bestAction (node:[]) = node
+                            bestAction (node:nodes) | minmaxRecur (depth-1) False (snd node) > minmaxRecur (depth-1) False (snd (bestAction nodes)) = node 
+                            bestAction (node:nodes) = bestAction nodes
+
 --Depth isMax Node
-minmax::(Ai a)=>Integer -> Bool -> a -> Integer
-minmax 0 _ node = heuristic node
-minmax _ _ node = heuristic node
-minmax depth True node = maximum $ map (minmax (depth-1) False) (transition node)
-minmax depth False node = minimum $ map (minmax (depth-1) True) (transition node)
-
-
---minmax::(Ai a)=>a->action
---minmax = tourMax
---    where
---        tourMin ai = fromMaybe (minimumBy (comparing snd)$ map tourMax $ transition ai) (but ai)
---        tourMax ai = fromMaybe (maximumBy (comparing snd)$ map tourMin $ transition ai) (but ai)
+minmaxRecur::(Ai a)=>Integer -> Bool -> a -> Integer
+minmaxRecur 0 _ node = heuristic node
+minmaxRecur depth True node = maximum $ map (minmaxRecur (depth-1) False) (transition node)
+minmaxRecur depth False node = minimum $ map (minmaxRecur (depth-1) True) (transition node)
