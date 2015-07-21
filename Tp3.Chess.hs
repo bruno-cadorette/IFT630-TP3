@@ -1,3 +1,5 @@
+module Tp3.Chess (ChessGame(..), PieceColor(..), PieceType(..)) where
+
 import qualified Data.Map as Map
 import Tp3.Ai
 
@@ -8,6 +10,7 @@ class (Show p)=>Piece p where
     movement::p->(Int,Int)->Board->[(Int,Int)]
     
 data PieceColor = White | Black deriving(Eq,Show)
+
 enemyColor White = Black
 enemyColor Black = White
 
@@ -24,6 +27,9 @@ instance Piece ChessPiece where
     value (ChessPiece t _)= pieceValue t
     movement = movementImpl
 
+instance Show ChessGame where
+    show (ChessGame color board) = show board
+    
 instance Ai ChessGame where
     transition = transitionImpl
     heuristic (ChessGame color board) = 
