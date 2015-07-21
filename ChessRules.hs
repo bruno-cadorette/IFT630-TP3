@@ -1,4 +1,4 @@
-import Data.Map as Map
+import qualified Data.Map as Map
 type Board = Map.Map (Int,Int) ChessPiece
 
 class (Show p)=>Piece p where
@@ -39,39 +39,50 @@ instance Piece ChessPiece where
 borderMin = max 0
 borderMax = min 7
 
+isOutOfMap (x,y) = x >= 8 || y >= 8 || x < 0 || y < 0
+
 block color board = block' 
     where 
         block' [] = []
-        block' (pos:xs) =
-            case Map.lookup pos board of
-                Just(x)->
-                    if pieceColor x /= color then
-                        [pos] -- on mange la piece adverse
-                    else 
-                        []
-                Nothing->pos:block' xs
+        block' (pos:xs)
+            |isOutOfMap pos = []
+            |otherwise = 
+                case Map.lookup pos board of
+                    Just(x)->
+                        if pieceColor x /= color then
+                            [pos] -- on mange la piece adverse
+                        else 
+                            []
+                    Nothing->pos:block' xs
 
-                
-movementRook (x,y) c g = up++down ++right++left
+movementKing (x,y) c g = filter (\(i,j)-> (not (isOutOfMap (i,j))) && (not (x==i && y == j)) && canEat (i,j) c g) possibleMovements
     where
-        up = block c g [(x,i)|i<-[borderMax (y+1) .. borderMax (y+7)]]
-        down = block c g [(x,i)|i<-[borderMin (y-1), borderMin (y-2) .. borderMin (y-7)]]
-        right = block c g [(i,y)|i<-[borderMax (x+1) .. borderMax (x+7)]]
-        left = block c g [(i,y)|i<-[borderMin (x-1), borderMin (x-2) .. borderMin (x-7)]]
-
-{-
-    concatMap (\(d, (axe, getPos))->block c g [getPos i|i<-[(axe+(d*1))..(borderMax axe + (d * 8))]]) params
-    where 
-        params = do
-            directions <- [-1,1] 
-            getPos <- [(y, (\i->(x,i))),(x,(\i->(i,y)))]
-            return (directions, getPos)-}
-
-movementKing (x,y) c g = []--[(i,j)|i<-(block c g) [(borderMin x-1)..(borderMax x+1)], j<-[(borderMin y-1)..(borderMax y+1)],i/=j]
---movementRook (x,y)c g = concat [[(i,y)|i<-(block c g) [(borderMin x-8)..(borderMax x+8)],i/=x], [(x,i)|i<-(block c g)[(borderMin y-8)..(borderMax y+8)],i/=y]]
-movementBishop (x,y) c g = []
+        possibleMovements = 
+            [(i,j)|i<-[(borderMin x-1)..(borderMax x+1)], j<-[(borderMin y-1)..(borderMax y+1)]]
+        canEat pos myColor board = 
+            case Map.lookup pos board of 
+                Just(x) -> pieceColor x /= myColor
+                Nothing -> True
+        
+movementQueen pos c g = concatMap (\f-> f pos c g) [movementRook, movementBishop]
+                
+movementRook (x,y) c g = up ++ down ++ right ++ left
+    where
+        up = block c g [(x,i)|i<-[borderMax (y+1) .. ]]
+        down = block c g [(x,i)|i<-[borderMin (y-1), borderMin (y-2) .. ]]
+        right = block c g [(i,y)|i<-[borderMax (x+1) .. ]]
+        left = block c g [(i,y)|i<-[borderMin (x-1), borderMin (x-2) .. ]]
+        
+movementBishop (x,y) c g = 
+    (generator (\(x,y)->(x+1,y+1))) ++ 
+    (generator (\(x,y)->(x+1,y-1))) ++
+    (generator (\(x,y)->(x-1,y+1))) ++
+    (generator (\(x,y)->(x-1,y-1)))
+    where
+        generator f = block c g $ tail $ iterate f (x,y)
+        
 movementKnight a c g = []
-movementQueen pos c g = []--concat [movementRook pos c g, movementBishop pos c g]
+
 movementPawn a b c = []
 {-
 movementPawn White (x,y) game = canEat (x+1,y+1) White [(x-1,y+1)] ++ (if y == 1 then [(x,y+2)] else [])
