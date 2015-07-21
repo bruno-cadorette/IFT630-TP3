@@ -1,10 +1,10 @@
 import qualified Data.Map as Map
-
+import Tp3.Ai
 
 type Board = Map.Map (Int,Int) ChessPiece
 
 class (Show p)=>Piece p where
-    value::p->Int
+    value::p->Integer
     movement::p->(Int,Int)->Board->[(Int,Int)]
     
 data PieceColor = White | Black deriving(Eq,Show)
@@ -24,10 +24,18 @@ instance Piece ChessPiece where
     value (ChessPiece t _)= pieceValue t
     movement = movementImpl
 
+instance Ai ChessGame where
+    transition = transitionImpl
+    heuristic (ChessGame color board) = 
+        Map.fold(\p acc->if pieceColor p == color then (acc + (value p)) else (acc - (value p))) 0 board
+    goal p = Nothing
+    actions a = []
+    
+    
 transitionImpl (ChessGame color board) = 
     concatMap transitions $ filter (\(k,x)->pieceColor x == color) $ Map.toList  board
     where
-        transitions (pos, elem) = map (\t->ChessGame (enemyColor c) $ rebuild t) $ movement elem pos board
+        transitions (pos, elem) = map (\t->ChessGame (enemyColor color) $ rebuild t) $ movement elem pos board
             where
                 rebuild target = Map.insert target elem $ Map.delete pos board
 pieceValue King = 1000
