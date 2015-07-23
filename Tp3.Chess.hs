@@ -1,13 +1,15 @@
-module Tp3.Chess (ChessGame(..), PieceColor(..), PieceType(..), baseConfiguration) where
+module Tp3.Chess (block, ChessGame(..), PieceColor(..), PieceType(..), baseConfiguration) where
 
 import qualified Data.Map as Map
 import Tp3.Ai
+import Data.List
 
-type Board = Map.Map (Int,Int) ChessPiece
+type Position = (Int,Int)
+type Board = Map.Map Position ChessPiece
 
 class (Show p)=>Piece p where
     value::p->Integer
-    movement::p->(Int,Int)->Board->[(Int,Int)]
+    movement::p->Position->Board->[Position]
     
 data PieceColor = White | Black deriving(Eq)
 
@@ -43,7 +45,14 @@ instance Piece ChessPiece where
     movement = movementImpl
 
 instance Show ChessGame where
-    show (ChessGame color board) = show board
+    show (ChessGame color board) = unlines $ border ++ (map showLine [7,6..0]) ++ border ++ bottomLetters
+        where
+            showLine y =show (y+1) ++ " | " ++ (intercalate " | " $ map(\x-> caseToShow $ Map.lookup (x,y) board) [0..7]) ++ " |"
+            caseToShow (Just x) = show x
+            caseToShow Nothing = "  "
+            border = ["  |" ++ (intercalate  "|" $ replicate 8 "----") ++ "|"]
+            bottomLetters =["    " ++ (intercalate  "    " $ map(\i->[i]) ['A'..'H'])]
+        
     
 instance Ai ChessGame where
     transition = transitionImpl
@@ -52,13 +61,14 @@ instance Ai ChessGame where
     goal p = Nothing
     actions a = []
     
-baseConfiguration = whitePieces ++ blackPieces
+baseConfiguration :: Board
+baseConfiguration = Map.fromList $ whitePieces ++ blackPieces
     where
     whitePieces = 
         ([((0,0), (ChessPiece Rook White)), ((7,0), (ChessPiece Rook White)), 
         ((1,0), (ChessPiece Knight White)), ((6,0), (ChessPiece Knight White)),
         ((2,0), (ChessPiece Bishop White)), ((5,0), (ChessPiece Bishop White)),
-        ((3,0), (ChessPiece Queen White)), ((5,0), (ChessPiece King White))]) 
+        ((3,0), (ChessPiece Queen White)), ((4,0), (ChessPiece King White))]) 
         ++ 
             map (\i -> ((i,1), (ChessPiece Pawn White))) [0..7]
     blackPieces = (map (\((x,y),(ChessPiece t _))->((x,7-y),(ChessPiece t Black)))) whitePieces
@@ -76,7 +86,7 @@ pieceValue Bishop = 3
 pieceValue Knight = 3
 pieceValue Pawn = 1
 
-movementImpl (ChessPiece t color) xy game = movementKind xy color game
+movementImpl (ChessPiece t color) xy board = movementKind xy color board
     where 
         movementKind = 
             case t of
@@ -91,12 +101,16 @@ movementImpl (ChessPiece t color) xy game = movementKind xy color game
 borderMin = max 0
 borderMax = min 7
 
+isKingInDanger kingPos color board =
+    any (\(k,v)-> elem kingPos $ movement v k board) $ filter (\(k,v)->pieceColor v /= color) $ Map.toList board
+
 isOutOfMap (x,y) = x >= 8 || y >= 8 || x < 0 || y < 0
 canEat pos myColor board = 
     case Map.lookup pos board of 
         Just(x) -> pieceColor x /= myColor
         Nothing -> True
         
+
 block color board = block' 
     where 
         block' [] = []
