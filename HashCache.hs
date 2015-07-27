@@ -1,3 +1,5 @@
+module HashCache (getHashTable,insertH,getValue,getList) where
+
 import qualified Data.HashTable.IO as H
 type HashTable k v = H.BasicHashTable k v
 
