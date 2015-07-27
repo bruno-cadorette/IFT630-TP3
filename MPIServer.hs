@@ -27,7 +27,9 @@ data MPIRequest = MPIRequest {
 instance Binary MPIRequestType
 instance Binary MPIRequest
 
-calculEchec echec hashTable unitTag = ()
+calculEchec echec hashTable unitTag =
+ do (hash,_status) <- recv commWorld echec unitTag
+    1 --send commWorld 0 unitTag (map (interim depth) hash)
 
 startTable size rank unitTag =
     --Start thread pr rcv chaque rank > 1 && < size
