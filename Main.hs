@@ -1,10 +1,13 @@
 import Tp3.Chess
-import Data.Text
-import qualified Data.Text.IO as T
+import AlgebricChessNotation
 
-test White = "Blanc"
-test Black = "Noir"
-
-
-main = 
-    return $ pack $ show $ baseConfiguration
+nextTurn :: ChessGame -> IO ChessGame
+nextTurn game = do
+    print game
+    (origin, target) <- fmap getMoveInput getLine
+    case play game origin target of
+        Just game' -> nextTurn game'
+        Nothing -> do
+            putStrLn "Le mouvement est invalide!"
+            nextTurn game
+main = nextTurn baseConfiguration
