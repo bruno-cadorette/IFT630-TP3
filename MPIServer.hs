@@ -33,7 +33,9 @@ instance Binary MPIRequest-}
 --Ce que j,attend! (Int sender,(Bool isGet,String Hash du jeu,Int cost))
 --Dans le cas d'un get je me fou du cost donc mettez ce que vous voulez
 
-calculEchec echec hashTable unitTag = ()
+calculEchec echec hashTable unitTag =
+ do (hash,_status) <- recv commWorld echec unitTag
+    1 --send commWorld 0 unitTag (map (interim depth) hash)
 
 startTable size rank unitTag =
     --Start thread pr rcv chaque rank > 1 && < size
