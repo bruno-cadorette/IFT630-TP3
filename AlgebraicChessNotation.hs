@@ -3,7 +3,7 @@ module AlgebraicChessNotation (getMoveInput)  where
 import Data.List
 import Data.Char
 import Data.Maybe
-import qualified Data.Text as T
+import Data.List.Split
 
 getCoordonate [column,row] =
   (fromJust $ column `elemIndex` ['a'..'z'], digitToInt (row) - 1)
@@ -11,6 +11,6 @@ getCoordonate [column,row] =
 getMoveInput :: String -> ((Int,Int),(Int,Int))
 getMoveInput input = toTuple coordonates
     where
-        coordonates = map (getCoordonate . T.unpack) $ T.splitOn (T.pack "-") $ T.pack input
+        coordonates = map getCoordonate $ splitOn "-"  input
         toTuple [x,y] = (x,y)
         

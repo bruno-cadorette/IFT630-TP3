@@ -1,17 +1,20 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module ChessPiece(
     PrettyPrint(..),
+    ChessGame(..),
     Position, 
-    Board, 
+    Board(..), 
     Piece(..), 
     PieceColor(..), 
     PieceType(..), 
     ChessPiece(..)) where
     
 import qualified Data.Map as Map 
+import GHC.Generics
     
 type Position = (Int,Int)
-type Board = Map.Map Position ChessPiece
-
+newtype Board = Board {boardMap :: Map.Map Position ChessPiece} deriving(Show)
 class (Show a) => PrettyPrint a where
     prettyPrint :: a -> String
 
@@ -19,7 +22,7 @@ class (PrettyPrint p)=>Piece p where
     value::p->Int
     movement::p->Position->Board->[Position]
     
-data PieceColor = White | Black deriving (Enum, Eq, Show)
+data PieceColor = White | Black deriving (Generic, Enum, Eq, Show)
 
 data PieceType = King | Queen | Rook | Bishop | Knight | Pawn deriving (Enum, Eq, Show)
 
@@ -27,6 +30,8 @@ data ChessPiece = ChessPiece {
     pieceType :: PieceType,
     pieceColor :: PieceColor
 } deriving (Eq, Show)
+
+data ChessGame = ChessGame PieceColor Board deriving (Generic, Show)
 
 instance PrettyPrint PieceType where
     prettyPrint King = "K"
@@ -57,13 +62,13 @@ isOutOfMap :: Position -> Bool
 isOutOfMap (x,y) = x >= 8 || y >= 8 || x < 0 || y < 0
 
 canEat :: Position -> PieceColor -> Board -> Bool 
-canEat pos myColor board = 
+canEat pos myColor (Board board) = 
     case Map.lookup pos board of 
         Just(x) -> pieceColor x /= myColor
         Nothing -> True
         
 block :: PieceColor -> Board -> [Position] -> [Position]
-block color board = block' 
+block color (Board board) = block' 
     where 
         block' [] = []
         block' (pos:xs)
@@ -128,7 +133,7 @@ movementKnight (x,y) c g = filter(\pos->not (isOutOfMap pos) || canEat pos c g )
         possible = [(-2,-1),(-2,1),(-1,-2),(-1,2),(1,-2),(1,2),(2,-1),(2,1)]
         
 movementPawn :: Position -> PieceColor -> Board -> [Position]
-movementPawn (x,y) c g = filter (\pos->not $ isOutOfMap pos) $  pawnEat ++ moveFront
+movementPawn (x,y) c (Board g) = filter (\pos->not $ isOutOfMap pos) $  pawnEat ++ moveFront
     where
     pawnEat = filter pawnEat' [(x-1,y + d),(x+1,y+d)]
         where 

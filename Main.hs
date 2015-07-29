@@ -18,4 +18,4 @@ nextTurn game = do
             
             
 main :: IO ()
-main = nextTurn baseConfiguration
+main = print baseConfiguration

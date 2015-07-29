@@ -15,7 +15,7 @@ import Data.Binary
 import Data.Typeable
 import Data.Maybe
 import GHC.Generics
---import Tp3.Chess
+import Chess
 --0  c'est le jeu d'echec
 --1 c'est la table
 -- >1 c'est des noyaux de calcul
@@ -67,3 +67,13 @@ handleRequest table (( sender, (False, chessGame,value)),_) =
     do
       insertH table (chessGame) value
       return (Nothing,sender)
+
+testSerialize size rank = 
+    if size < 2= then 
+        putStrLn "At least two processes are needed"
+    else 
+        case rank of
+            0 -> do (msg, _status) <- recv commWorld 1 unitTag
+                 putStrLn $ prettyPrint msg
+            1 -> send commWorld 0 unitTag baseConfiguration
+            _ -> return ()
