@@ -1,4 +1,4 @@
-module AlgebricChessNotation (getMoveInput)  where
+module AlgebraicChessNotation (getMoveInput)  where
 
 import Data.List
 import Data.Char
