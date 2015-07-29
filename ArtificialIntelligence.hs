@@ -1,8 +1,17 @@
+module ArtificialIntelligence (Ai(..), minmax) where
+
 import Data.List (maximumBy)
 import Data.Function (on)
-import Ai
+
+
+class (Show a)=>Ai a where
+   transition :: a->[a]
+   actions :: a->[(Action,a)]
+   goal :: a->(Maybe Int)
+   heuristic :: a->Int
 
 type Action = String
+
 
 --Depth Racine
 minmax::(Ai a)=>Int -> a -> Action
