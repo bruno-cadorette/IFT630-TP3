@@ -2,6 +2,7 @@ module Chess (module ChessPiece, module Chess, module ChessSerializer) where -- 
 
 import qualified Data.Map as Map
 import ArtificialIntelligence
+import AlgebraicChessNotation
 import ChessPiece
 import Data.List
 import Data.Maybe
@@ -26,11 +27,11 @@ instance PrettyPrint ChessGame where
         
     
 instance Ai ChessGame where
-    transition = transitionImpl
+    transition game = map snd $ actionsImpl game
     heuristic (ChessGame color (Board board)) = 
         Map.fold(\p acc->if pieceColor p == color then (acc + (value p)) else (acc - (value p))) 0 board
     goal p = Nothing
-    actions a = []
+    actions = actionsImpl
 
 play :: ChessGame -> Position -> Position -> Maybe ChessGame
 play (ChessGame color board) origin target = 
@@ -72,12 +73,12 @@ baseConfiguration = (ChessGame White (Board $ Map.fromList $ whitePieces ++ blac
 movePiece :: Position -> ChessPiece -> Position -> Board -> Board
 movePiece origin piece target (Board board) =Board $ Map.insert target piece $ Map.delete origin board
 
-allTransitionsForBoard :: ChessGame -> (Position,ChessPiece) -> [ChessGame]
-allTransitionsForBoard (ChessGame color board) (origin, piece) = 
-    filter (\(ChessGame _ b) -> not $ isKingInDanger (ChessGame color b)) $ 
-    map (\target->ChessGame (enemyColor color) $ movePiece origin piece target board) $ 
+allActionsForBoard :: ChessGame -> (Position,ChessPiece) -> [(String, ChessGame)]
+allActionsForBoard (ChessGame color board) (origin, piece) = 
+    filter (\(_, (ChessGame _ b)) -> not $ isKingInDanger (ChessGame color b)) $
+    map (\target->((getNotation origin target), ChessGame (enemyColor color) $ movePiece origin piece target board)) $ 
     movement piece origin board
     
-transitionImpl :: ChessGame -> [ChessGame]
-transitionImpl (ChessGame color board) = 
-    concatMap (allTransitionsForBoard (ChessGame color board)) $ filter (\(_,x)->pieceColor x == color) $ Map.toList $ boardMap board
+actionsImpl :: ChessGame -> [(String, ChessGame)]
+actionsImpl (ChessGame color board) = 
+    concatMap (allActionsForBoard (ChessGame color board)) $ filter (\(_,x)->pieceColor x == color) $ Map.toList $ boardMap board
