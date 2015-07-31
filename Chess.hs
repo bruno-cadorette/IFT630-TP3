@@ -17,7 +17,7 @@ instance PrettyPrint ChessGame where
         where
             side = case color of
                 White -> id
-                Black -> reverse
+                Black -> id
             showBoard = unlines $ border ++ (map (showLine) $ side [7,6..0]) ++ border ++ (bottomLetters)
             showLine y = show (y+1) ++ " | " ++ (intercalate " | " $ map(\x-> caseToShow $ Map.lookup (x,y) board) (side [0..7])) ++ " |"
             caseToShow (Just x) = prettyPrint x
@@ -42,7 +42,7 @@ play (ChessGame color board) origin target =
         _ -> Nothing
 
 isCheckMate :: ChessGame -> Bool        
-isCheckMate (ChessGame color board) = 
+isCheckMate (ChessGame color board) =   
     (isPieceInDanger (ChessGame color board) $ kingPos) && 
     (null $ transition (ChessGame color board))
     where 
@@ -55,8 +55,8 @@ isKingInDanger :: ChessGame -> Bool
 isKingInDanger game = isPieceInDanger game $ kingPosition game
         
 isPieceInDanger :: ChessGame -> Position -> Bool
-isPieceInDanger (ChessGame color board) piecePos =
-    any (\(k,v)-> elem piecePos $ movement v k board) $ filter (\(_,v)->pieceColor v /= color) $ Map.toList $ boardMap board
+isPieceInDanger (ChessGame color board) piecePos = False
+    --any (\(k,v)-> elem piecePos $ movement v k board) $ filter (\(_,v)->pieceColor v /= color) $ Map.toList $ boardMap board
     
 baseConfiguration :: ChessGame
 baseConfiguration = (ChessGame White (Board $ Map.fromList $ whitePieces ++ blackPieces))

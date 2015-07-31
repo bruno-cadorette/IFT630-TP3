@@ -110,25 +110,27 @@ movementKing (x,y) c g = filter (\(i,j)-> (not $ isOutOfMap (i,j)) && (not (x ==
 movementQueen :: Position -> PieceColor -> Board -> [Position]
 movementQueen pos c g = concatMap (\f-> f pos c g) [movementRook, movementBishop]
 
+generator :: Position -> PieceColor -> Board -> (Position -> Position) -> [Position]
+generator (x,y) c g f = block c g $ tail $ iterate f (x,y)
+
 movementRook :: Position -> PieceColor -> Board -> [Position]
-movementRook (x,y) c g = up ++ down ++ right ++ left
-    where
-        up = block c g [(x,i)|i<-[borderMax (y+1) .. ]]
-        down = block c g [(x,i)|i<-[borderMin (y-1), borderMin (y-2) .. ]]
-        right = block c g [(i,y)|i<-[borderMax (x+1) .. ]]
-        left = block c g [(i,y)|i<-[borderMin (x-1), borderMin (x-2) .. ]]
+movementRook position c g = 
+    concatMap (generator position c g)
+        [(\(x',y')->(x',y'+1)),
+        (\(x',y')->(x',y'-1)),
+        (\(x',y')->(x'+1,y')),
+        (\(x',y')->(x'-1,y'))]
             
 movementBishop :: Position -> PieceColor -> Board -> [Position]
-movementBishop (x,y) c g = 
-    (generator (\(x',y')->(x'+1,y'+1))) ++ 
-    (generator (\(x',y')->(x'+1,y'-1))) ++
-    (generator (\(x',y')->(x'-1,y'+1))) ++
-    (generator (\(x',y')->(x'-1,y'-1)))
-    where
-        generator f = block c g $ tail $ iterate f (x,y)
+movementBishop position c g = 
+    concatMap (generator position c g)
+        [(\(x',y')->(x'+1,y'+1)), 
+        (\(x',y')->(x'+1,y'-1)),
+        (\(x',y')->(x'-1,y'+1)), 
+        (\(x',y')->(x'-1,y'-1))]
         
 movementKnight :: Position -> PieceColor -> Board -> [Position]
-movementKnight (x,y) c g = filter(\pos->not (isOutOfMap pos) || canEat pos c g ) $ map (\(i,j)->(x+i,y+j)) possible
+movementKnight (x,y) c g = filter(\pos->not (isOutOfMap pos) && canEat pos c g ) $ map (\(i,j)->(x+i,y+j)) possible
     where
         possible = [(-2,-1),(-2,1),(-1,-2),(-1,2),(1,-2),(1,2),(2,-1),(2,1)]
         
