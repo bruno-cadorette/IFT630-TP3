@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
-module Interact (human,Player,ai,playGame,playTurn,printGame,computeNode') where
+module Interact (human,Player,ai,playGame,playTurn,printGame,computeNode) where
 
 
 import Chess
@@ -20,7 +20,7 @@ type SenderRank = Int
 data MPIRequestType =
     GetCache ChessGame SenderRank |
     SetCache (ChessGame,Int) SenderRank |
-    GetGameResult ChessGame |
+    GetGameResult Integer (Action, ChessGame) |
     CancelComputation deriving (Generic)
 
 
@@ -40,10 +40,10 @@ human game = do
             putStrLn "Le mouvement est invalide!"
             human game
 
-ai :: DiffTime -> Player
-ai time game = do
+ai :: Int -> DiffTime -> Player
+ai size time game = do
     uselessMvar <- newEmptyMVar
-    (origin, target) <- fmap getMoveInput $ minmax time uselessMvar game
+    (origin, target) <- fmap getMoveInput $ minmax time uselessMvar size game
     return $ verifyCheckMate $ fromJust $ play game origin target
 
 playGame :: Player -> Player -> IO()
@@ -68,20 +68,21 @@ start = ChessGame White (Board {boardMap = Map.fromList [((0,0),ChessPiece {piec
 
 
 
-
-computeNode' duration send rcv flags = do
-    (msg, status) <- rcv
-    case msg of
-        GetGameResult game -> do
-            printGame game
-            stopFlag <- newEmptyMVar
-            action <- minmax duration stopFlag game
-            forkIO $ send action  -- Mettre le flag dans minmax
-            computeNode' duration send rcv  (stopFlag:flags)
-        CancelComputation -> do
-            putStrLn "Task cancelled"
-            mapM_ (\x-> putMVar x ()) flags
-        _ -> error "Bad type MPI Request"
+computeNode send rcv = computeNode' []
+    where 
+    computeNode' flags = do
+        (msg, status) <- rcv
+        case msg of
+            GetGameResult duration (action, game) -> do
+                printGame game
+                stopFlag <- newEmptyMVar
+                action <- interim (secondsToDiffTime duration) stopFlag (action, game)
+                forkIO $ send action  -- Mettre le flag dans minmax
+                computeNode' (stopFlag:flags)
+            CancelComputation -> do
+                putStrLn "Task cancelled"
+                mapM_ (\x-> putMVar x ()) flags
+            _ -> error "Bad type MPI Request"
 
 
 {-main :: IO ()

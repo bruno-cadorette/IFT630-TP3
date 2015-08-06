@@ -55,8 +55,11 @@ main = mpiWorld $ \size rank ->
          1 -> do
                 playGame (ai (secondsToDiffTime 30)) (ai $secondsToDiffTime 30)
          0 -> startTable size receiver unitTag
-         _ -> computeNode
-         --_ -> calculEchec 0 1 unitTag
+         _ -> computeNode send' receive'
+                where 
+                    receive' = recv commWorld (toRank 0) unitTag
+                    send' = send commWorld  (toRank 0) unitTag
+
 sendResponse :: (Maybe Int,Int) -> IO()
 sendResponse (Nothing,_) = return ()
 sendResponse (response,sender) =
@@ -72,5 +75,3 @@ handleRequest table ((SetCache (chessGame,value) sender), _) =
       H.insert table (encode chessGame) value
       return (Nothing,sender)
 
-computeNode = computeNode' (secondsToDiffTime 30) (send commWorld  (toRank 0) unitTag) receive  []
-            where receive = recv commWorld (toRank 0) unitTag

@@ -1,4 +1,4 @@
-module ArtificialIntelligence (Ai(..), minmax) where
+module ArtificialIntelligence (Ai(..), Action, interim, minmax) where
 
 import Data.List (maximumBy)
 import Data.Function (on)
