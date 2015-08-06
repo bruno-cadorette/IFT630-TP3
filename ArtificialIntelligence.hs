@@ -1,6 +1,7 @@
 module ArtificialIntelligence (Ai(..), Action, interim, minmax) where
 
 import Data.List (maximumBy)
+import Data.List.Split
 import Data.Function (on)
 import Data.Time.Clock
 import Control.Concurrent.MVar
@@ -41,3 +42,11 @@ minmaxOver startTime duration isDone bool node = do
 
 splitter::(Ai a)=>[(Action,a)] -> DiffTime -> MVar() -> IO [(Action,Int)]
 splitter listActions duration isDone = mapM (interim duration isDone) listActions --map (send commWorld 0 unitTag) listActions
+
+
+
+splitIn n total = splitPlaces $ splitIn' n total
+    where
+        splitIn' n total = 
+            let total' = ceiling $ total / n
+            in total':splitIn' n total'
