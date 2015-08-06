@@ -3,16 +3,16 @@
 module ChessPiece(
     PrettyPrint(..),
     ChessGame(..),
-    Position, 
-    Board(..), 
-    Piece(..), 
-    PieceColor(..), 
-    PieceType(..), 
+    Position,
+    Board(..),
+    Piece(..),
+    PieceColor(..),
+    PieceType(..),
     ChessPiece(..)) where
-    
-import qualified Data.Map as Map 
+
+import qualified Data.Map as Map
 import GHC.Generics
-    
+
 type Position = (Int,Int)
 newtype Board = Board {boardMap :: Map.Map Position ChessPiece} deriving(Show)
 class (Show a) => PrettyPrint a where
@@ -21,7 +21,7 @@ class (Show a) => PrettyPrint a where
 class (PrettyPrint p)=>Piece p where
     value::p->Int
     movement::p->Position->Board->[Position]
-    
+
 data PieceColor = White | Black deriving (Generic, Enum, Eq, Show)
 
 data PieceType = King | Queen | Rook | Bishop | Knight | Pawn deriving (Enum, Eq, Show)
@@ -41,48 +41,48 @@ instance PrettyPrint PieceType where
     prettyPrint Knight = "N"
     prettyPrint Pawn = "P"
 
-instance PrettyPrint PieceColor where 
+instance PrettyPrint PieceColor where
     prettyPrint White = "W"
     prettyPrint Black = "B"
 
 instance PrettyPrint ChessPiece where
     prettyPrint (ChessPiece t c) = prettyPrint c ++ prettyPrint t
-    
+
 instance Piece ChessPiece where
     value (ChessPiece t _)= pieceValue t
     movement = movementImpl
 
-borderMin :: Int -> Int    
+borderMin :: Int -> Int
 borderMin = max 0
-borderMax :: Int -> Int   
+borderMax :: Int -> Int
 borderMax = min 7
 
 
 isOutOfMap :: Position -> Bool
 isOutOfMap (x,y) = x >= 8 || y >= 8 || x < 0 || y < 0
 
-canEat :: Position -> PieceColor -> Board -> Bool 
-canEat pos myColor (Board board) = 
-    case Map.lookup pos board of 
+canEat :: Position -> PieceColor -> Board -> Bool
+canEat pos myColor (Board board) =
+    case Map.lookup pos board of
         Just(x) -> pieceColor x /= myColor
         Nothing -> True
-        
+
 block :: PieceColor -> Board -> [Position] -> [Position]
-block color (Board board) = block' 
-    where 
+block color (Board board) = block'
+    where
         block' [] = []
         block' (pos:xs)
             |isOutOfMap pos = []
-            |otherwise = 
+            |otherwise =
                 case Map.lookup pos board of
                     Just(x)->
                         if pieceColor x /= color then
-                            [pos] 
-                        else 
+                            [pos]
+                        else
                             []
                     Nothing->pos:block' xs
-                    
-pieceValue :: PieceType -> Int                    
+
+pieceValue :: PieceType -> Int
 pieceValue King = 1000
 pieceValue Queen = 9
 pieceValue Rook = 5
@@ -92,8 +92,8 @@ pieceValue Pawn = 1
 
 movementImpl :: ChessPiece -> Position -> Board -> [Position]
 movementImpl (ChessPiece t color) xy board = movementKind xy color board
-    where 
-        movementKind = 
+    where
+        movementKind =
             case t of
                 King -> movementKing
                 Queen -> movementQueen
@@ -104,9 +104,9 @@ movementImpl (ChessPiece t color) xy board = movementKind xy color board
 movementKing :: Position -> PieceColor -> Board -> [Position]
 movementKing (x,y) c g = filter (\(i,j)-> (not $ isOutOfMap (i,j)) && (not (x == i && y == j)) && canEat (i,j) c g) possibleMovements
     where
-        possibleMovements = 
+        possibleMovements =
             [(i,j)|i<-[(borderMin x-1)..(borderMax x+1)], j<-[(borderMin y-1)..(borderMax y+1)]]
-        
+
 movementQueen :: Position -> PieceColor -> Board -> [Position]
 movementQueen pos c g = concatMap (\f-> f pos c g) [movementRook, movementBishop]
 
@@ -114,41 +114,41 @@ generator :: Position -> PieceColor -> Board -> (Position -> Position) -> [Posit
 generator (x,y) c g f = block c g $ tail $ iterate f (x,y)
 
 movementRook :: Position -> PieceColor -> Board -> [Position]
-movementRook position c g = 
+movementRook position c g =
     concatMap (generator position c g)
         [(\(x',y')->(x',y'+1)),
         (\(x',y')->(x',y'-1)),
         (\(x',y')->(x'+1,y')),
         (\(x',y')->(x'-1,y'))]
-            
+
 movementBishop :: Position -> PieceColor -> Board -> [Position]
-movementBishop position c g = 
+movementBishop position c g =
     concatMap (generator position c g)
-        [(\(x',y')->(x'+1,y'+1)), 
+        [(\(x',y')->(x'+1,y'+1)),
         (\(x',y')->(x'+1,y'-1)),
-        (\(x',y')->(x'-1,y'+1)), 
+        (\(x',y')->(x'-1,y'+1)),
         (\(x',y')->(x'-1,y'-1))]
-        
+
 movementKnight :: Position -> PieceColor -> Board -> [Position]
 movementKnight (x,y) c g = filter(\pos->not (isOutOfMap pos) && canEat pos c g ) $ map (\(i,j)->(x+i,y+j)) possible
     where
         possible = [(-2,-1),(-2,1),(-1,-2),(-1,2),(1,-2),(1,2),(2,-1),(2,1)]
-        
+
 movementPawn :: Position -> PieceColor -> Board -> [Position]
 movementPawn (x,y) c (Board g) = filter (\pos->not $ isOutOfMap pos) $  pawnEat ++ moveFront
     where
     pawnEat = filter pawnEat' [(x-1,y + d),(x+1,y+d)]
-        where 
+        where
         pawnEat' pos =
-            case Map.lookup pos g of 
+            case Map.lookup pos g of
                 Just(other)->pieceColor other /= c
                 Nothing->False
     moveFront = takeWhile (\p ->Map.notMember  p g) $ if fm then [(x,y+d), (x,y+2*d)] else [(x,y+d)]
-        where 
+        where
         fm = case c of
                 White->y==1
                 Black->y==6
-    d = 
+    d =
         case c of
             White-> 1
             Black-> -1

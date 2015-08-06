@@ -72,5 +72,5 @@ handleRequest table ((SetCache (chessGame,value) sender), _) =
       H.insert table (encode chessGame) value
       return (Nothing,sender)
 
-computeNode = computeNode' (send commWorld  (toRank 0) unitTag) receive  []
+computeNode = computeNode' (secondsToDiffTime 30) (send commWorld  (toRank 0) unitTag) receive  []
             where receive = recv commWorld (toRank 0) unitTag
