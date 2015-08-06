@@ -1,5 +1,6 @@
 module ArtificialIntelligence (Ai(..), Action, interim, minmax) where
 
+import Control.Parallel.MPI.Simple (mpiWorld, commWorld, unitTag, send, recv)
 import Data.List (maximumBy)
 import Data.List.Split
 import Data.Function (on)
@@ -18,13 +19,13 @@ type Action = String
 
 
 --Depth Racine
-minmax::(Ai a)=>DiffTime -> MVar() -> a -> IO Action
-minmax duration isDone racine = fmap (fst . maximumBy (compare `on` snd)) (splitter (actions racine)  duration isDone)
+minmax::(Ai a)=>Integer -> MVar() -> Int -> a -> IO Action
+minmax duration isDone size racine = fmap (fst . maximumBy (compare `on` snd)) (splitter (actions racine)  duration isDone)
 
-interim::(Ai a)=>DiffTime -> MVar() -> (Action,a) -> IO (Action,Int)
+interim::(Ai a)=>Integer -> MVar() -> (Action,a) -> IO (Action,Int)
 interim duration isDone (action,node) = do
 				startTime <- fmap utctDayTime getCurrentTime
-				minmax <- minmax' startTime duration isDone False node
+				minmax <- minmax' startTime (secondsToDiffTime duration) isDone False node
 				return (action, minmax)
 
 --Depth isMax Node
@@ -40,13 +41,13 @@ minmaxOver startTime duration isDone bool node = do
 						then return $ heuristic node
 						else minmax' startTime duration isDone bool node
 
-splitter::(Ai a)=>[(Action,a)] -> DiffTime -> MVar() -> IO [(Action,Int)]
-splitter listActions duration isDone = mapM (interim duration isDone) listActions --map (send commWorld 0 unitTag) listActions
+splitter::(Ai a)=>[(Action,a)] -> Integer -> Integer -> MVar() -> IO [(Action,Int)]
+splitter listActions duration size isDone = mapM (send commWorld  unitTag) (splitIn (size-2) listActions)
 
-
-
-splitIn n total = splitPlaces $ splitIn' n total
+splitIn n xs = splitPlaces (splitIn' n (length xs)) xs
     where
+	splitIn' n 0 = []
         splitIn' n total = 
             let total' = ceiling $ total / n
             in total':splitIn' n total'
+
