@@ -21,35 +21,15 @@ import Chess
 --1 c'est la table
 -- >1 c'est des noyaux de calcul
 
---data MPIRequestType = GetGameResult ChessGame | SetGameResult (ChessGame,Int) deriving (Serializable)
-data MPIRequestType = GetGameResult [Char] | SetGameResult ([Char],Int) deriving (Generic)
-
-data MPIRequest = MPIRequest {
-    sender :: Int,
-    requestType :: MPIRequestType
-} deriving (Generic)
-
-instance Serialize MPIRequestType {-where
-      put (GetGameResult a) = putWord8 0 >> put a
-      put (SetGameResult b) = putWord8 1 >> put b
-      get = do
-        tag <- getWord8
-        case tag of
-         0 -> do
-                a <- get
-                return (GetGameResult a)
-         _ -> do
-                a <- get
-                return (SetGameResult a)-}
-
-instance Serialize MPIRequest {-where
-      put (MPIRequest sndr rqst) = do
-        put sndr
-        put rqst
-      get = do
-        (MPIRequest sndr rqst) <- get
-        return (MPIRequest sndr rqst) -}
-
+type SenderRank = Int
+data MPIRequestType =
+    GetCache ChessGame SenderRank | 
+    SetCache (ChessGame,Int) SenderRank | 
+    GetGameResult ChessGame | 
+    CancelComputation deriving (Generic)
+    
+    
+instance Serialize MPIRequestType 
 
 --Ce que j,attend! (Int sender,(Bool isGet,String Hash du jeu,Int cost))
 --Dans le cas d'un get je me fou du cost donc mettez ce que vous voulez
@@ -98,12 +78,3 @@ handleRequest table ((MPIRequest sender (SetGameResult (chessGame,value))),_) =
       insertH table (chessGame) value
       return (Nothing,sender)
       
-testSerialize size rank = 
-    if size < 2= then 
-        putStrLn "At least two processes are needed"
-    else 
-        case rank of
-            0 -> do (msg, _status) <- recv commWorld 1 unitTag
-                 putStrLn $ prettyPrint msg
-            1 -> send commWorld 0 unitTag baseConfiguration
-            _ -> return ()

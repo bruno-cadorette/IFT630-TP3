@@ -55,8 +55,8 @@ isKingInDanger :: ChessGame -> Bool
 isKingInDanger game = isPieceInDanger game $ kingPosition game
         
 isPieceInDanger :: ChessGame -> Position -> Bool
-isPieceInDanger (ChessGame color board) piecePos = False
-    --any (\(k,v)-> elem piecePos $ movement v k board) $ filter (\(_,v)->pieceColor v /= color) $ Map.toList $ boardMap board
+isPieceInDanger (ChessGame color board) piecePos =
+    any (\(k,v)-> elem piecePos $ movement v k board) $ filter (\(_,v)->pieceColor v /= color) $ Map.toList $ boardMap board
     
 baseConfiguration :: ChessGame
 baseConfiguration = (ChessGame White (Board $ Map.fromList $ whitePieces ++ blackPieces))
