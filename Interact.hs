@@ -41,9 +41,10 @@ human game = do
             human game
 
 ai :: DiffTime -> Player
-ai depth game = do return $ verifyCheckMate $ fromJust $ play game origin target
-    where
-        (origin, target) = getMoveInput $ minmax depth newEmptyMVar game
+ai time game = do 
+    uselessMvar <- newEmptyMVar
+    (origin, target) <- fmap getMoveInput $ minmax time uselessMvar game
+    return $ verifyCheckMate $ fromJust $ play game origin target
 
 playGame :: Player -> Player -> IO()
 playGame whitePlayer blackPlayer =
