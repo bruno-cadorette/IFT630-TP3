@@ -15,6 +15,7 @@ import Data.Maybe
 import Data.Serialize
 import Chess
 import Data.ByteString
+import Data.Time.Clock
 import Interact
 
 --0  c'est le jeu d'echec
@@ -52,10 +53,7 @@ main = mpiWorld $ \size rank ->
       then print "At least three processes are needed"
       else case rank of
          1 -> do
-                     threadDelay 500
-                     print "Sending"
-                     --send commWorld receiver unitTag (GetCache ChessGame sender2)
-                     print "Sent"
+                playGame (ai (secondsToDiffTime 30)) (ai $secondsToDiffTime 30)
          0 -> startTable size receiver unitTag
          _ -> computeNode
          --_ -> calculEchec 0 1 unitTag

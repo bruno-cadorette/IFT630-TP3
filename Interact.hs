@@ -12,6 +12,7 @@ import Control.Concurrent
 import Control.Concurrent.Async
 import Data.Serialize
 import GHC.Generics
+import Data.Time.Clock
 import GHC.Conc (numCapabilities)
 type Player = ChessGame -> IO(Maybe ChessGame)
 
@@ -39,10 +40,10 @@ human game = do
             putStrLn "Le mouvement est invalide!"
             human game
 
-ai :: Int -> Player
+ai :: DiffTime -> Player
 ai depth game = do return $ verifyCheckMate $ fromJust $ play game origin target
     where
-        (origin, target) = getMoveInput $ minmax depth game
+        (origin, target) = getMoveInput $ minmax depth newEmptyMVar game
 
 playGame :: Player -> Player -> IO()
 playGame whitePlayer blackPlayer =
@@ -67,14 +68,15 @@ start = ChessGame White (Board {boardMap = Map.fromList [((0,0),ChessPiece {piec
 
 
 
-computeNode' send rcv flags = do
+computeNode' duration send rcv flags = do
     (msg, status) <- rcv
     case msg of
         GetGameResult game -> do
             printGame game
             stopFlag <- newEmptyMVar
-            forkIO $ send $ minmax 4 game -- Mettre le flag dans minmax
-            computeNode' send rcv  (stopFlag:flags)
+            action <- minmax duration stopFlag game
+            forkIO $ send action  -- Mettre le flag dans minmax
+            computeNode' duration send rcv  (stopFlag:flags)
         CancelComputation -> do
             putStrLn "Task cancelled"
             mapM_ (\x-> putMVar x ()) flags

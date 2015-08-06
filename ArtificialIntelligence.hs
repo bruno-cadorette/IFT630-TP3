@@ -17,21 +17,21 @@ type Action = String
 
 
 --Depth Racine
-minmax::(Ai a)=>DiffTime -> MVar -> a -> IO Action
-minmax duration isDone racine = fmap (fst . maximumBy (compare `on` snd)) (splitter (actions racine) isDone duration)
+minmax::(Ai a)=>DiffTime -> MVar() -> a -> IO Action
+minmax duration isDone racine = fmap (fst . maximumBy (compare `on` snd)) (splitter (actions racine)  duration isDone)
 
-interim::(Ai a)=>DiffTime -> MVar -> (Action,a) -> IO (Action,Int)
-interim duration isDone (action,node) = do 
+interim::(Ai a)=>DiffTime -> MVar() -> (Action,a) -> IO (Action,Int)
+interim duration isDone (action,node) = do
 				startTime <- fmap utctDayTime getCurrentTime
 				minmax <- minmax' startTime duration isDone False node
 				return (action, minmax)
 
 --Depth isMax Node
-minmax'::(Ai a)=>DiffTime -> MVar -> DiffTime -> Bool -> a -> IO Int
+minmax'::(Ai a)=>DiffTime ->  DiffTime -> MVar() -> Bool -> a -> IO Int
 minmax' startTime duration isDone True node = fmap (maximum) (mapM (minmaxOver startTime duration isDone False) (transition node))
 minmax' startTime duration isDone False node = fmap (minimum) (mapM (minmaxOver startTime duration isDone True) (transition node))
 
-minmaxOver::(Ai a)=>DiffTime -> MVar -> DiffTime -> Bool -> a -> IO Int
+minmaxOver::(Ai a)=>DiffTime -> DiffTime -> MVar() ->Bool -> a -> IO Int
 minmaxOver startTime duration isDone bool node = do
 					currentTime <- fmap utctDayTime getCurrentTime
 					block <- tryReadMVar isDone
@@ -39,5 +39,5 @@ minmaxOver startTime duration isDone bool node = do
 						then return $ heuristic node
 						else minmax' startTime duration isDone bool node
 
-splitter::(Ai a)=>[(Action,a)] -> DiffTime -> MVar -> IO [(Action,Int)]
-splitter listActions duration isDone = mapM (interim duration isDone) listActions --map (send commWorld 0 unitTag) listActions 
+splitter::(Ai a)=>[(Action,a)] -> DiffTime -> MVar() -> IO [(Action,Int)]
+splitter listActions duration isDone = mapM (interim duration isDone) listActions --map (send commWorld 0 unitTag) listActions
