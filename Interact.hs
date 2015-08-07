@@ -14,14 +14,10 @@ import Data.Serialize
 import GHC.Generics
 import Data.Time.Clock
 import GHC.Conc (numCapabilities)
+import MPIRequestType
 type Player = ChessGame -> IO(Maybe ChessGame)
 
-type SenderRank = Int
-data MPIRequestType =
-    GetCache ChessGame SenderRank |
-    SetCache (ChessGame,Int) SenderRank |
-    GetGameResult Integer (Action, ChessGame) |
-    CancelComputation deriving (Generic)
+
 
 
 instance Serialize MPIRequestType

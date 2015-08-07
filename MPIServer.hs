@@ -22,12 +22,6 @@ import Interact
 --1 c'est la table
 -- >1 c'est des noyaux de calcul
 type HashTable k v = H.BasicHashTable k v
-type SenderRank = Int
-data MPIRequestType =
-    GetCache ChessGame SenderRank |
-    SetCache (ChessGame,Int) SenderRank |
-    GetGameResult ChessGame |
-    CancelComputation deriving (Generic)
 
 
 instance Serialize MPIRequestType
