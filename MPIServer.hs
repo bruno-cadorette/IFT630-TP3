@@ -24,21 +24,11 @@ import Interact
 type HashTable k v = H.BasicHashTable k v
 
 
-instance Serialize MPIRequestType
-
-
 receiver = 0
 sender2 = 1
 
 calculEchec echec hashTable unitTag = ()
 
-startTable size rank unitTag =
-    --Start thread pr rcv chaque rank > 1 && < size
-  do
-    table <- H.new
-
-    (request,status) <- recv commWorld anySource unitTag
-    sendResponse =<< handleRequest table (request,status)
 
 
 main :: IO ()
@@ -47,10 +37,10 @@ main = mpiWorld $ \size rank ->
       then print "At least three processes are needed"
       else case rank of
          1 -> do
-                playGame (ai (secondsToDiffTime 30)) (ai $secondsToDiffTime 30)
-         0 -> startTable size receiver unitTag
+                playGame (ai size 30) (ai size 30)
+         0 ->  return ()--startTable size receiver unitTag
          _ -> computeNode send' receive'
-                where 
+                where
                     receive' = recv commWorld (toRank 0) unitTag
                     send' = send commWorld  (toRank 0) unitTag
 
@@ -59,7 +49,7 @@ sendResponse (Nothing,_) = return ()
 sendResponse (response,sender) =
         send commWorld  (toRank sender) unitTag (fromJust response)
 
-handleRequest :: H.BasicHashTable ByteString Int -> (MPIRequestType, Control.Parallel.MPI.Internal.Status) -> IO(Maybe Int,Int)
+{-handleRequest :: H.BasicHashTable ByteString Int -> (MPIRequestType, Control.Parallel.MPI.Internal.Status) -> IO(Maybe Int,Int)
 handleRequest table ((GetCache chessGame sender), _) =
   do
     cost <- H.lookup table (encode chessGame)
@@ -68,4 +58,4 @@ handleRequest table ((SetCache (chessGame,value) sender), _) =
     do
       H.insert table (encode chessGame) value
       return (Nothing,sender)
-
+-}

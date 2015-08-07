@@ -1,5 +1,12 @@
-module MPIRequestType (SenderRank, MPIRequestType(..)) where
+{-# LANGUAGE DeriveGeneric #-}
+module MPIRequestType (SenderRank, MPIRequestType(..),Action) where
 
+import ChessPiece
+import GHC.Generics
+import Data.Serialize
+import ChessSerializer
+
+type Action = String
 type SenderRank = Int
 data MPIRequestType =
     GetCache ChessGame SenderRank |
@@ -7,3 +14,5 @@ data MPIRequestType =
     GetGameResult Integer (Action, ChessGame) |
     ReturnGameResult (Action, ChessGame) SenderRank |
     CancelComputation deriving (Generic)
+
+instance Serialize MPIRequestType

@@ -20,8 +20,6 @@ type Player = ChessGame -> IO(Maybe ChessGame)
 
 
 
-instance Serialize MPIRequestType
-
 verifyCheckMate game =
     if isCheckMate game then
         Nothing
@@ -36,7 +34,7 @@ human game = do
             putStrLn "Le mouvement est invalide!"
             human game
 
-ai :: Int -> DiffTime -> Player
+ai :: Int -> Integer -> Player
 ai size time game = do
     uselessMvar <- newEmptyMVar
     (origin, target) <- fmap getMoveInput $ minmax time uselessMvar size game
@@ -65,14 +63,14 @@ start = ChessGame White (Board {boardMap = Map.fromList [((0,0),ChessPiece {piec
 
 
 computeNode send rcv = computeNode' []
-    where 
+    where
     computeNode' flags = do
         (msg, status) <- rcv
         case msg of
             GetGameResult duration (action, game) -> do
                 printGame game
                 stopFlag <- newEmptyMVar
-                action <- interim (secondsToDiffTime duration) stopFlag (action, game)
+                action <- interim duration stopFlag (action, game)
                 forkIO $ send action  -- Mettre le flag dans minmax
                 computeNode' (stopFlag:flags)
             CancelComputation -> do
