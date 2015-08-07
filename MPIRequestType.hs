@@ -12,7 +12,7 @@ data MPIRequestType =
     GetCache ChessGame SenderRank |
     SetCache (ChessGame,Int) SenderRank |
     GetGameResult Integer (Action, ChessGame) |
-    ReturnGameResult (Action, ChessGame) SenderRank |
+    ReturnGameResult (Action, Int) SenderRank |
     CancelComputation deriving (Generic)
 
 instance Serialize MPIRequestType

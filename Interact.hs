@@ -38,6 +38,7 @@ ai :: Int -> Integer -> Player
 ai size time game = do
     uselessMvar <- newEmptyMVar
     (origin, target) <- fmap getMoveInput $ minmax time uselessMvar size game
+    print "Move recu"
     return $ verifyCheckMate $ fromJust $ play game origin target
 
 playGame :: Player -> Player -> IO()
@@ -62,7 +63,7 @@ start = ChessGame White (Board {boardMap = Map.fromList [((0,0),ChessPiece {piec
 
 
 
-computeNode send rcv = computeNode' []
+computeNode rank send rcv = computeNode' []
     where
     computeNode' flags = do
         (msg, status) <- rcv
@@ -71,7 +72,9 @@ computeNode send rcv = computeNode' []
                 printGame game
                 stopFlag <- newEmptyMVar
                 action <- interim duration stopFlag (action, game)
-                forkIO $ send action  -- Mettre le flag dans minmax
+                print "On a le res"
+                send (ReturnGameResult action rank)  -- Mettre le flag dans minmax
+                print "On a send"
                 computeNode' (stopFlag:flags)
             CancelComputation -> do
                 putStrLn "Task cancelled"

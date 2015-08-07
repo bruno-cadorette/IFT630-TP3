@@ -36,8 +36,9 @@ minmax duration isDone size racine = fmap (fst . maximumBy (compare `on` snd)) (
 interim::Integer -> MVar() -> (Action,ChessGame) -> IO (Action,Int)
 interim duration isDone (action,node) = do
 				startTime <- fmap utctDayTime getCurrentTime
-				minmax <- minmax' startTime (secondsToDiffTime duration) isDone False node
-				return (action, minmax)
+				res <- minmax' startTime (secondsToDiffTime duration) isDone False node
+				print "On a le res dans itnerim"
+				return (action, res)
 
 --Depth isMax Node
 minmax'::DiffTime ->  DiffTime -> MVar() -> Bool -> ChessGame -> IO Int
@@ -48,32 +49,41 @@ minmaxOver::DiffTime -> DiffTime -> MVar() ->Bool -> ChessGame -> IO Int
 minmaxOver startTime duration isDone bool node = do
 					currentTime <- fmap utctDayTime getCurrentTime
 					block <- tryReadMVar isDone
-					if startTime + duration > currentTime || isJust block
-						then return $ heuristic node
-						else minmax' startTime duration isDone bool node
+					if startTime + duration < currentTime || isJust block
+						then do
+					return $ heuristic node
+						else do
+					minmax' startTime duration isDone bool node
 
 splitter::[(Action,ChessGame)] -> Integer -> Int -> MVar() -> IO [(Action,Int)]
 splitter listActions duration size isDone = do
-					let (xs:xss) = splitIn (size-1) listActions
+					let (xs:xss) = splitIn (size) listActions
 					let ourActions = mapM (interim duration isDone) xs
-					mapM_ (\(f,s) -> sending s f duration) (zip xss [2..])
-					liftM2 (++) ourActions (buildLists [2.. (size-1)])
+					mapM_ (\(f,s) -> sending s f duration) (zip xss [1..])
+					liftM2 (++) (buildLists [1.. (size-1)]) ourActions
 
 --buildLists :: [Int]->IO [(Action,Int)]
 buildLists [] = return []
 buildLists remainings = do
+			print "on recv"
 			(msg,_) <- recv commWorld anySource unitTag
 			case msg of
-				ReturnGameResult actions sender -> buildLists (delete sender remainings) --fmap (\xs -> actions : xs)  buildLists (delete sender remainings)
+				ReturnGameResult actions sender ->do
+					print "Receive"
+					fmap (\xs -> actions : xs)  $ buildLists (delete sender remainings)
 				_ -> error "Mauvais Type"
 
 sending ::  Int -> [(Action, ChessGame)]->Integer -> IO ()
-sending numero listActions duration = mapM_ (\x -> send commWorld (toRank numero) unitTag (GetGameResult duration x)) listActions
+sending numero listActions duration =
+  do
+   print $ "On send" ++  (show numero)
+   mapM_ (\x -> send commWorld (toRank numero) unitTag (GetGameResult duration x)) listActions
 
 splitIn :: Integral a => a -> [e] -> [[e]]
 splitIn n xs = splitPlaces (splitIn' (fromIntegral n) (genericLength xs)) xs
-    where
-        splitIn' n 0 = []
-        splitIn' n total =
-            let total' =  ceiling $ total / n
-            in total':splitIn' n (fromIntegral total')
+               where
+               splitIn' n total
+                   | n == total || total == 0 || n == 0 = []
+               splitIn' n total =
+                   let total' =  ceiling $ total / n
+                   in total':splitIn' (n-1) (fromIntegral $ (floor total) - total')

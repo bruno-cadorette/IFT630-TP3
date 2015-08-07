@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
 
 
@@ -24,8 +23,6 @@ import Interact
 type HashTable k v = H.BasicHashTable k v
 
 
-receiver = 0
-sender2 = 1
 
 calculEchec echec hashTable unitTag = ()
 
@@ -33,13 +30,12 @@ calculEchec echec hashTable unitTag = ()
 
 main :: IO ()
 main = mpiWorld $ \size rank ->
-   if size < 2
+   if size < 3
       then print "At least three processes are needed"
       else case rank of
-         1 -> do
-                playGame (ai size 30) (ai size 30)
-         0 ->  return ()--startTable size receiver unitTag
-         _ -> computeNode send' receive'
+         0 -> do
+                playGame (ai size 3) (ai size 3)
+         _ -> computeNode (fromRank rank) send' receive'
                 where
                     receive' = recv commWorld (toRank 0) unitTag
                     send' = send commWorld  (toRank 0) unitTag
@@ -47,6 +43,8 @@ main = mpiWorld $ \size rank ->
 sendResponse :: (Maybe Int,Int) -> IO()
 sendResponse (Nothing,_) = return ()
 sendResponse (response,sender) =
+        do
+        print "On send"
         send commWorld  (toRank sender) unitTag (fromJust response)
 
 {-handleRequest :: H.BasicHashTable ByteString Int -> (MPIRequestType, Control.Parallel.MPI.Internal.Status) -> IO(Maybe Int,Int)
