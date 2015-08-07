@@ -1,6 +1,9 @@
 module ArtificialIntelligence (Ai(..), Action, interim, minmax) where
 
 import Control.Parallel.MPI.Simple (mpiWorld, commWorld, unitTag, send, recv)
+import Control.Parallel.MPI.Base (anySource)
+import Control.Parallel.MPI.Internal (Status,toRank,fromRank)
+import MPIRequestType
 import Data.List (maximumBy)
 import Data.List.Split
 import Data.Function (on)
@@ -42,7 +45,21 @@ minmaxOver startTime duration isDone bool node = do
 						else minmax' startTime duration isDone bool node
 
 splitter::(Ai a)=>[(Action,a)] -> Integer -> Integer -> MVar() -> IO [(Action,Int)]
-splitter listActions duration size isDone = mapM (send commWorld  unitTag) (splitIn (size-2) listActions)
+splitter listActions duration size isDone = do
+					(xs:xss) <- (splitIn (size-1) listActions)
+					let ourActions = interim duration isDone xs
+					mapM ((f,s) -> sending s f duration) (zip xss [2..])
+					ourActions `liftM2 (++)` (buildLists [2..size-1])
+					
+
+buildLists [] = []
+buildLists remainings = do
+			(msg,_) <- recv commWorld anySource unitTag
+			case msg of
+				ReturnGameResult actions sender -> actions : buildLists (delete sender remainings)
+				_ -> error "Mauvais Type"					
+
+sending numero listActions duration = map ((f,s) -> send commWorld (toRank numero) unitTag (GetGameResult duration (f,s))) listActions
 
 splitIn n xs = splitPlaces (splitIn' n (length xs)) xs
     where
