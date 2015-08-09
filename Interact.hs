@@ -10,8 +10,10 @@ import qualified Data.Map as Map
 import Control.Applicative
 import Control.Concurrent
 import Control.Concurrent.Async
+import Data.Function
 import Data.Serialize
 import GHC.Generics
+import Data.List
 import Data.Time.Clock
 import GHC.Conc (numCapabilities)
 import MPIRequestType
@@ -68,11 +70,11 @@ computeNode rank send rcv = computeNode' []
     computeNode' flags = do
         (msg, status) <- rcv
         case msg of
-            GetGameResult duration (action, game) -> do
-                printGame game
+            GetGameResult duration actions -> do
                 stopFlag <- newEmptyMVar
-                action <- interim duration stopFlag (action, game)
-                print "On a le res"
+                allresponse <- mapM (\ x -> interim duration stopFlag x) actions --Faut Threader ca
+                print "On a les response"
+                let action = maximumBy (compare `on` snd) allresponse
                 send (ReturnGameResult action rank)  -- Mettre le flag dans minmax
                 print "On a send"
                 computeNode' (stopFlag:flags)
@@ -80,6 +82,7 @@ computeNode rank send rcv = computeNode' []
                 putStrLn "Task cancelled"
                 mapM_ (\x-> putMVar x ()) flags
             _ -> error "Bad type MPI Request"
+
 
 
 {-main :: IO ()

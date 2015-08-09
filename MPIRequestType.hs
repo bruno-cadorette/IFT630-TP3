@@ -11,7 +11,7 @@ type SenderRank = Int
 data MPIRequestType =
     GetCache ChessGame SenderRank |
     SetCache (ChessGame,Int) SenderRank |
-    GetGameResult Integer (Action, ChessGame) |
+    GetGameResult Integer [(Action, ChessGame)] |
     ReturnGameResult (Action, Int) SenderRank |
     CancelComputation deriving (Generic)
 

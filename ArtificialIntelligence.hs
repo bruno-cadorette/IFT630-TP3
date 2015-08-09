@@ -63,7 +63,9 @@ splitter listActions duration size isDone = do
 					liftM2 (++) (buildLists [1.. (size-1)]) ourActions
 
 --buildLists :: [Int]->IO [(Action,Int)]
-buildLists [] = return []
+buildLists [] = do
+   print "On a tout recu!"
+   return []
 buildLists remainings = do
 			print "on recv"
 			(msg,_) <- recv commWorld anySource unitTag
@@ -77,7 +79,7 @@ sending ::  Int -> [(Action, ChessGame)]->Integer -> IO ()
 sending numero listActions duration =
   do
    print $ "On send" ++  (show numero)
-   mapM_ (\x -> send commWorld (toRank numero) unitTag (GetGameResult duration x)) listActions
+   send commWorld (toRank numero) unitTag (GetGameResult duration listActions)
 
 splitIn :: Integral a => a -> [e] -> [[e]]
 splitIn n xs = splitPlaces (splitIn' (fromIntegral n) (genericLength xs)) xs
