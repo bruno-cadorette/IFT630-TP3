@@ -72,7 +72,8 @@ computeNode rank send rcv = computeNode' []
         case msg of
             GetGameResult duration actions -> do
                 stopFlag <- newEmptyMVar
-                allresponse <- mapM (\ x -> interim duration stopFlag x) actions --Faut Threader ca
+                allthread <- mapM (\ x -> async $ interim duration stopFlag x) actions --Faut Threader ca
+                allresponse <- mapM wait $! allthread
                 print "On a les response"
                 let action = maximumBy (compare `on` snd) allresponse
                 send (ReturnGameResult action rank)  -- Mettre le flag dans minmax

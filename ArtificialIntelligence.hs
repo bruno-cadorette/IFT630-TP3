@@ -9,6 +9,7 @@ import Data.Function (on)
 import Data.Time.Clock
 import Control.Monad
 import Control.Concurrent.MVar
+import Control.Concurrent.Async
 import Data.Maybe
 import MPIRequestType
 import Data.Serialize
@@ -58,7 +59,8 @@ minmaxOver startTime duration isDone bool node = do
 splitter::[(Action,ChessGame)] -> Integer -> Int -> MVar() -> IO [(Action,Int)]
 splitter listActions duration size isDone = do
 					let (xs:xss) = splitIn (size) listActions
-					let ourActions = mapM (interim duration isDone) xs
+					allthread <- mapM (\ x -> async $ interim duration isDone x) xs --Faut Threader ca
+					let ourActions = mapM wait $! allthread
 					mapM_ (\(f,s) -> sending s f duration) (zip xss [1..])
 					liftM2 (++) (buildLists [1.. (size-1)]) ourActions
 
@@ -81,7 +83,7 @@ sending numero listActions duration =
    print $ "On send" ++  (show numero)
    send commWorld (toRank numero) unitTag (GetGameResult duration listActions)
 
-splitIn :: Integral a => a -> [e] -> [[e]]
+splitIn ::  Int -> [e] -> [[e]]
 splitIn n xs = splitPlaces (splitIn' (fromIntegral n) (genericLength xs)) xs
                where
                splitIn' n total

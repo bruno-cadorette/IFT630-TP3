@@ -30,7 +30,7 @@ calculEchec echec hashTable unitTag = ()
 
 main :: IO ()
 main = mpiWorld $ \size rank ->
-   if size < 3
+   if size < 2
       then print "At least three processes are needed"
       else case rank of
          0 -> do
