@@ -38,13 +38,12 @@ interim::Integer -> MVar() -> (Action,ChessGame) -> IO (Action,Int)
 interim duration isDone (action,node) = do
 				startTime <- fmap utctDayTime getCurrentTime
 				res <- minmax' startTime (secondsToDiffTime duration) isDone False node
-				print "On a le res dans itnerim"
 				return (action, res)
 
 --Depth isMax Node
 minmax'::DiffTime ->  DiffTime -> MVar() -> Bool -> ChessGame -> IO Int
-minmax' startTime duration isDone True node = fmap (maximum) (mapM (minmaxOver startTime duration isDone False) (transition node))
-minmax' startTime duration isDone False node = fmap (minimum) (mapM (minmaxOver startTime duration isDone True) (transition node))
+minmax' startTime duration isDone True node = fmap (maximum) (mapConcurrently (minmaxOver startTime duration isDone False) (transition node))
+minmax' startTime duration isDone False node = fmap (minimum) (mapConcurrently (minmaxOver startTime duration isDone True) (transition node))
 
 minmaxOver::DiffTime -> DiffTime -> MVar() ->Bool -> ChessGame -> IO Int
 minmaxOver startTime duration isDone bool node = do
@@ -66,21 +65,21 @@ splitter listActions duration size isDone = do
 
 --buildLists :: [Int]->IO [(Action,Int)]
 buildLists [] = do
-   print "On a tout recu!"
+   print "On a tout recu les mouvements!"
    return []
 buildLists remainings = do
-			print "on recv"
+			print "on attend qu'un mouvement finisse"
 			(msg,_) <- recv commWorld anySource unitTag
 			case msg of
 				ReturnGameResult actions sender ->do
-					print "Receive"
+					print "On a recu un mouvement"
 					fmap (\xs -> actions : xs)  $ buildLists (delete sender remainings)
 				_ -> error "Mauvais Type"
 
 sending ::  Int -> [(Action, ChessGame)]->Integer -> IO ()
 sending numero listActions duration =
   do
-   print $ "On send" ++  (show numero)
+   print $ "On send a " ++  (show numero)
    send commWorld (toRank numero) unitTag (GetGameResult duration listActions)
 
 splitIn ::  Int -> [e] -> [[e]]

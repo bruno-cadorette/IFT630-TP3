@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
-module Interact (human,Player,ai,playGame,playTurn,printGame,computeNode) where
+module Interact (human,Player,ai,playGame,playTurn,printGame,computeNode, testOneTurn) where
 
 
 import Chess
@@ -63,7 +63,9 @@ printGame = putStrLn . prettyPrint
 
 start = ChessGame White (Board {boardMap = Map.fromList [((0,0),ChessPiece {pieceType = Rook, pieceColor = White}),((0,1),ChessPiece {pieceType = Pawn, pieceColor = White}),((0,2),ChessPiece {pieceType = Rook, pieceColor = White}),((0,6),ChessPiece {pieceType = Pawn, pieceColor = Black}),((0,7),ChessPiece {pieceType = Rook, pieceColor = Black}),((1,0),ChessPiece {pieceType = Knight, pieceColor = White}),((1,1),ChessPiece {pieceType = Pawn, pieceColor = White}),((1,5),ChessPiece {pieceType = Rook, pieceColor = Black}),((1,6),ChessPiece {pieceType = Pawn, pieceColor = Black}),((1,7),ChessPiece {pieceType = Knight, pieceColor = Black}),((2,0),ChessPiece {pieceType = Bishop, pieceColor = White}),((2,1),ChessPiece {pieceType = Pawn, pieceColor = White}),((2,6),ChessPiece {pieceType = Pawn, pieceColor = Black}),((2,7),ChessPiece {pieceType = Bishop, pieceColor = Black}),((3,0),ChessPiece {pieceType = Queen, pieceColor = White}),((3,1),ChessPiece {pieceType = Pawn, pieceColor = White}),((3,6),ChessPiece {pieceType = Pawn, pieceColor = Black}),((3,7),ChessPiece {pieceType = Queen, pieceColor = Black}),((4,0),ChessPiece {pieceType = King, pieceColor = White}),((4,1),ChessPiece {pieceType = Pawn, pieceColor = White}),((4,6),ChessPiece {pieceType = Pawn, pieceColor = Black}),((4,7),ChessPiece {pieceType = King, pieceColor = Black}),((5,0),ChessPiece {pieceType = Bishop, pieceColor = White}),((5,1),ChessPiece {pieceType = Pawn, pieceColor = White}),((5,6),ChessPiece {pieceType = Pawn, pieceColor = Black}),((5,7),ChessPiece {pieceType = Bishop, pieceColor = Black}),((6,0),ChessPiece {pieceType = Knight, pieceColor = White}),((6,1),ChessPiece {pieceType = Pawn, pieceColor = White}),((6,6),ChessPiece {pieceType = Pawn, pieceColor = Black}),((6,7),ChessPiece {pieceType = Knight, pieceColor = Black}),((7,3),ChessPiece {pieceType = Pawn, pieceColor = White}),((7,4),ChessPiece {pieceType = Pawn, pieceColor = Black})]})
 
-
+testOneTurn size = do
+  uselessMvar <- newEmptyMVar
+  print =<< minmax 3 uselessMvar size baseConfiguration
 
 computeNode rank send rcv = computeNode' []
     where
@@ -72,8 +74,8 @@ computeNode rank send rcv = computeNode' []
         case msg of
             GetGameResult duration actions -> do
                 stopFlag <- newEmptyMVar
-                allthread <- mapM (\ x -> async $ interim duration stopFlag x) actions --Faut Threader ca
-                allresponse <- mapM wait $! allthread
+                allresponse <- mapConcurrently (\ x ->  interim duration stopFlag x) actions --Faut Threader ca
+                --allresponse <- mapM wait $! allthread
                 print "On a les response"
                 let action = maximumBy (compare `on` snd) allresponse
                 send (ReturnGameResult action rank)  -- Mettre le flag dans minmax

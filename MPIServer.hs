@@ -34,7 +34,8 @@ main = mpiWorld $ \size rank ->
       then print "At least three processes are needed"
       else case rank of
          0 -> do
-                playGame (ai size 3) (ai size 3)
+              testOneTurn size
+              --  playGame (ai size 3) (ai size 3)
          _ -> computeNode (fromRank rank) send' receive'
                 where
                     receive' = recv commWorld (toRank 0) unitTag
